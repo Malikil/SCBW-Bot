@@ -1,4 +1,4 @@
-public class LinkNode<T extends Comparable<T>> implements Comparable<T>
+public class LinkNode<T>
 {
 	private LinkNode<T> next;
 	private T value;
@@ -18,11 +18,5 @@ public class LinkNode<T extends Comparable<T>> implements Comparable<T>
 	{
 		this.value = value;
 		this.next = next;
-	}
-	
-	@Override
-	public int compareTo(T v)
-	{
-		return value.compareTo(v);
 	}
 }

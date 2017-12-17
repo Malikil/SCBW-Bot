@@ -1,9 +1,10 @@
-public class Stack<T extends Comparable<T>>
+public class Stack<T>
 {
 	private LinkNode<T> base;
 	private int count;
 	
 	public int size() { return count; }
+	public T peek() { return base.getValue(); }
 	
 	public Stack() 
 	{
