@@ -104,13 +104,18 @@ public class BroodWarBot extends DefaultBWListener
 			
 			if (unit.getType().isWorker())
 				unit.gather(getClosestMineral(unit));
+			else if (unit.getType().canAttack())
+				unit.move(BWTA.getNearestChokepoint(unit.getPosition()).getCenter());
 		}
 	}
 	
 	@Override
 	public void onFrame()
 	{
-		game.drawTextScreen(400, 25, unitTree.get(new UnitTypeWrapper(UnitType.Terran_SCV)).count() + " on tree, " + self.completedUnitCount(UnitType.Terran_SCV) + " total");
+		StringBuilder unitCount = new StringBuilder();
+		for (UnitTypeWrapper type : unitTree)
+			unitCount.append(type.count() + " " + type.getType() + " on tree, " + self.completedUnitCount(type.getType()) + " total\n");
+		game.drawTextScreen(350, 25, unitCount.toString());
 	    game.drawTextScreen(10, 10, game.mapName() + " - " + game.mapFileName() + "\tPlaying as " + self.getName() + " - " + self.getRace());
 	    
 		// Update frame flags
@@ -122,6 +127,23 @@ public class BroodWarBot extends DefaultBWListener
 		}
 		else if ((flags / 4) % 2 == 1)
 			flags -= 4;
+
+		// Build the first barracks
+		if (self.allUnitCount() > 12 && self.allUnitCount(UnitType.Terran_Barracks) == 0)
+		{
+			if ((flags / 8) % 2 == 0)
+				flags += 8;
+		}
+		else if ((flags / 8) % 2 == 1)
+			flags -= 8;
+		// Build subsequent barracks'
+		if (self.minerals() > (300 + 50 * self.allUnitCount(UnitType.Terran_Marine)))
+		{
+			if ((flags / 8) % 2 == 0)
+				flags += 8;
+		}
+		else if ((flags / 8) % 2 == 1)
+			flags -= 8;
 		
 		// Make sure the build queued flag is correct
 		if ((flags / 2) % 2 == 1)
@@ -159,7 +181,7 @@ public class BroodWarBot extends DefaultBWListener
 				"Scout Sent - " + (flags % 2 == 1) +
 				"\nBuilding Queued - " + ((flags / 2) % 2 == 1) +
 				"\nBuild Supply - " + ((flags / 4) % 2 == 1) +
-				"\nIncomplete Building - " + ((flags / 8) % 2 == 1) +
+				"\nBuild Barracks - " + ((flags / 8) % 2 == 1) +
 				"\n\n" + oldActives.size() + " old actives:" + str);
 		
 		// Act on each flag
@@ -169,15 +191,11 @@ public class BroodWarBot extends DefaultBWListener
 		{
 			// Move to current base location
 			BaseLocation home = BWTA.getNearestBaseLocation(activeUnit.getPosition());
-			System.out.println("1");
 			activeUnit.move(home.getRegion().getChokepoints().get(0).getCenter());
-			System.out.println("2");
 			for (BaseLocation b : BWTA.getStartLocations())
-				if (!b.equals(home))
+				if (b.getDistance(home) > 100)
 					activeUnit.move(b.getPosition(), true);
-			System.out.println("3");
 			activeUnit.move(home.getPosition(), true);
-			System.out.println("4");
 			activeUnit.gather(getClosestMineral(activeUnit), true);
 			game.sendTextEx(true, "Sent #" + activeUnit.getID() + " to scout");
 			oldActives.add(activeUnit);
@@ -212,7 +230,7 @@ public class BroodWarBot extends DefaultBWListener
 	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
 	    		}
 			}
-			else if ((flags / 8) % 2 == 1 && self.minerals() > 150)
+			else if ((flags / 8) % 2 == 1 && self.minerals() > 175)
 			{
 				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Barracks);
 				if (buildLocation != null)
@@ -249,6 +267,23 @@ public class BroodWarBot extends DefaultBWListener
 					temp.add(unit);
 			}
 			oldActives = temp;
+		}
+		
+		// TODO Manage marines properly
+		if (self.completedUnitCount(UnitType.Terran_Marine) > (self.supplyTotal() / 4))
+		{
+			for (Unit marine : unitTree.get(new UnitTypeWrapper(UnitType.Terran_Marine)))
+			{
+				if (marine.isIdle())
+					if (enemyBuildings.size() > 0)
+						marine.attack(enemyBuildings.getBase().getPosition());
+					else
+					{
+						for (BaseLocation b : BWTA.getStartLocations())
+							if (b.getDistance(self.getStartLocation().toPosition()) > 500)
+								marine.attack(b.getPosition(), true);
+					}
+			}
 		}
 		
 		// ===================================================================================================
@@ -292,6 +327,9 @@ public class BroodWarBot extends DefaultBWListener
 				if ((double)scvs / minerals < 1.7 && myUnit.getTrainingQueue().size() < 1)
 					myUnit.train(UnitType.Terran_SCV);
 			}
+			
+			if (myUnit.getType() == UnitType.Terran_Barracks && self.minerals() >= 50 && myUnit.getTrainingQueue().size() < 1)
+				myUnit.train(UnitType.Terran_Marine);
 	
 	        if (myUnit.getType().isWorker())
 	        {
@@ -332,10 +370,6 @@ public class BroodWarBot extends DefaultBWListener
 	    		last = p;
 	    	}
 	    	game.drawLineMap(last, first, Color.Green);
-	    	s = "";
-	    	s += b.getMinerals().size() + " Minerals: " + b.minerals() + "\n";
-	    	s += b.getGeysers().size() + " Gas: " + b.gas();
-	    	game.drawTextMap(b.getRegion().getCenter(), s);
 	    }
 	}
 	

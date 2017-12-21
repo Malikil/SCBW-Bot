@@ -1,12 +1,15 @@
+import java.util.Iterator;
+
 import bwapi.Unit;
 import bwapi.UnitType;
 
 
-public class UnitTypeWrapper implements Comparable<UnitTypeWrapper>
+public class UnitTypeWrapper implements Comparable<UnitTypeWrapper>, Iterable<Unit>
 {
 	private UnitType t;
 	private Queue<Unit> q;
 	
+	public UnitType getType() { return t; }
 	public int count() { return q.size(); }
 	
 	public UnitTypeWrapper(Unit unit)
@@ -52,5 +55,11 @@ public class UnitTypeWrapper implements Comparable<UnitTypeWrapper>
 	public int compareTo(UnitTypeWrapper type)
 	{
 		return t.toString().compareTo(type.t.toString());
+	}
+
+	@Override
+	public Iterator<Unit> iterator()
+	{
+		return q.iterator();
 	}
 }

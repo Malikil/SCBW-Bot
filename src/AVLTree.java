@@ -5,6 +5,7 @@ public class AVLTree<T extends Comparable<T>> implements Iterable<T>
 	private AVLNode<T> base;
 	private int count;
 	
+	public T getBase() { return base.getValue(); }
 	public int size() { return count; }
 	
 	/**
@@ -287,20 +288,6 @@ public class AVLTree<T extends Comparable<T>> implements Iterable<T>
 		}
 		
 		return current.getValue();
-	}
-	
-	public void printTree()
-	{
-		printNode(base, "B");
-	}
-	
-	private void printNode(AVLNode<T> node, String pre)
-	{
-		System.out.println(pre + "\t" + node.getValue().toString());
-		if (node.getLeft() != null)
-			printNode(node.getLeft(), pre + ".L");
-		if (node.getRight() != null)
-			printNode(node.getRight(), pre + ".R");
 	}
 
 	@Override
