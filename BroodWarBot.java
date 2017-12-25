@@ -129,7 +129,7 @@ public class BroodWarBot extends DefaultBWListener
 			flags -= 4;
 
 		// Build the first barracks
-		if (self.minerals() > 150 && self.allUnitCount(UnitType.Terran_Barracks) == 0)
+		if (self.allUnitCount() > 12 && self.allUnitCount(UnitType.Terran_Barracks) == 0)
 		{
 			if ((flags / 8) % 2 == 0)
 				flags += 8;
@@ -137,21 +137,41 @@ public class BroodWarBot extends DefaultBWListener
 		else if ((flags / 8) % 2 == 1)
 			flags -= 8;
 		// Build subsequent barracks'
-		if (self.minerals() > (150 + 150 * (self.allUnitCount(UnitType.Terran_Barracks)^2))) //(300 + 50 * self.allUnitCount(UnitType.Terran_Marine)))
+		if (self.minerals() > (300 + 50 * self.allUnitCount(UnitType.Terran_Marine)))
 		{
 			if ((flags / 8) % 2 == 0)
 				flags += 8;
 		}
 		else if ((flags / 8) % 2 == 1)
 			flags -= 8;
-		//build Refinery
-		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Refinery) < self.allUnitCount(UnitType.Terran_Command_Center)) //&& nearby.getType().isMineralField()))
+		//Build first engineering
+		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Engineering_Bay) == 0)
 		{
-			if ((flags / 8192) % 2 == 0)
-				flags += 8192;
+			if ((flags / 16) % 2 == 0)
+				flags += 16;
 		}
-		else if ((flags / 8192) % 2 == 1)
-			flags -= 8192;
+		else if ((flags / 16) % 2 == 1)
+			flags -= 16;
+		// TODO Build subsequent engineering
+		
+		//Build Turret
+		if (/*enemyAir >= ASetValue &&*/ self.minerals() >= 500 && self.allUnitCount(UnitType.Terran_Missile_Turret) <= (7 * self.allUnitCount(UnitType.Terran_Command_Center)))
+		{
+			if ((flags / 32) % 2 == 0)
+				flags += 32;
+		}
+		else if (/*enemyAirIs>=75or80%OfTheirArmy (assuming they have the same supply as you) &&*/ self.allUnitCount(UnitType.Terran_Missile_Turret) <= (7 * self.allUnitCount(UnitType.Terran_Command_Center)))
+		{
+			if ((flags / 32) % 2 == 0)
+				flags += 32;
+		}
+		else if ((flags / 32) % 2 == 1)
+			flags -= 32;
+		
+		// TODO Build Academy
+		
+		// Build Bunker
+		if(self.allUnitCount(UnitType.Terran_Engineering_Bay) > 0 /*&& self.allUnitCount(UnitType.Terran_Bunker) is less than 2 per ramp inside base*/ && self.minerals() > 500)
 		
 		// Make sure the build queued flag is correct
 		if ((flags / 2) % 2 == 1)
@@ -190,7 +210,6 @@ public class BroodWarBot extends DefaultBWListener
 				"\nBuilding Queued - " + ((flags / 2) % 2 == 1) +
 				"\nBuild Supply - " + ((flags / 4) % 2 == 1) +
 				"\nBuild Barracks - " + ((flags / 8) % 2 == 1) +
-				"\nBuild Refinery - " + ((flags / 8192) % 2 == 1) +
 				"\n\n" + oldActives.size() + " old actives:" + str);
 		
 		// Act on each flag
@@ -222,13 +241,15 @@ public class BroodWarBot extends DefaultBWListener
 		if ((flags / 2) % 2 == 0 && !activeUnit.isCarryingGas() && !activeUnit.isCarryingMinerals())
 			if ((flags / 4) % 2 == 1 && self.minerals() > 100)
 			{
-				//Terran_Supply_Depot------------------------------------------------------------------------------------------------------------------------------
 				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Supply_Depot);
 	    		if (buildLocation != null)
 	    		{
-	    			game.sendTextEx(true, "Trying to build Terran_Supply_Depot at " + buildLocation.toString());
+	    			game.sendTextEx(true, "Trying to build Supply Depot at " + buildLocation.toString());
 	    			activeUnit.build(UnitType.Terran_Supply_Depot, buildLocation);
-	    			cycleActiveUnit();
+	    			oldActives.add(activeUnit);
+	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
+	    			game.sendTextEx(true, "Active unit changed to #" + activeUnit.getID());
+	    			flags += 2;
 	    		}
 	    		else
 	    		{
@@ -239,183 +260,15 @@ public class BroodWarBot extends DefaultBWListener
 			}
 			else if ((flags / 8) % 2 == 1 && self.minerals() > 175)
 			{
-				//Terran_Barracks---------------------------------------------------------------------------------------------------------------------------------
 				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Barracks);
 				if (buildLocation != null)
 				{
-					game.sendTextEx(true, "Trying to build Terran_Barracks at " + buildLocation.toString());
+					game.sendTextEx(true, "Trying to build Barracks at " + buildLocation.toString());
 					activeUnit.build(UnitType.Terran_Barracks, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 16) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Engineering_Bay---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Engineering_Bay);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Engineering_Bay at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Engineering_Bay, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 32) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Missile_Turret---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Missile_Turret);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Missile_Turret at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Missile_Turret, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 64) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Academy---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Academy);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Academy at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Academy, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 128) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Bunker---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Bunker);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Bunker at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Bunker, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 256) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Factory---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Factory);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Factory at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Factory, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 512) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Starport---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Starport);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Starport at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Starport, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 1024) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Science_Facility---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Science_Facility);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Science_Facility at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Science_Facility, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 2048) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Armory---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Armory);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Armory at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Armory, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 4096) % 2 == 1 && self.minerals() > 175)
-			{
-				//Terran_Command_Center---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Command_Center);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Terran_Command_Center at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Command_Center, buildLocation);
-					cycleActiveUnit();
-				}
-				else
-				{
-					game.sendTextEx(true, "Build location was null, sending to minerals and cycling active");
-	    			activeUnit.gather(getClosestMineral(activeUnit));
-	    			activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-				}
-			}
-			else if ((flags / 8192) % 2 == 1 && self.minerals() > 175)
-			{
-				//Refinery---------------------------------------------------------------------------------------------------------------------------------
-				TilePosition buildLocation = getBuildLocation(activeUnit, UnitType.Terran_Refinery);
-				if (buildLocation != null)
-				{
-					game.sendTextEx(true, "Trying to build Refinery at " + buildLocation.toString());
-					activeUnit.build(UnitType.Terran_Refinery, buildLocation);
-					cycleActiveUnit();
+					oldActives.add(activeUnit);
+					activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
+	    			game.sendTextEx(true, "Active unit changed to #" + activeUnit.getID());
+	    			flags += 2;
 				}
 				else
 				{
@@ -659,14 +512,6 @@ public class BroodWarBot extends DefaultBWListener
 		}
 		
 		return null;
-	}
-	
-	public void cycleActiveUnit()
-	{
-		oldActives.add(activeUnit);
-		activeUnit = unitTree.get(new UnitTypeWrapper(activeUnit)).cycle();
-		game.sendTextEx(true, "Active unit changed to #" + activeUnit.getID());
-		flags += 2;
 	}
 	
 	@Override
