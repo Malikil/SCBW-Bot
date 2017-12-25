@@ -27,7 +27,7 @@ public class BroodWarBot extends DefaultBWListener
      * ------1---------(512) - Starport
      * -----1----------(1024)- Science
      * ----1-----------(2048)- Armory
-     * ---1------------(4096)- Queued Command Centre
+     * ---1------------(4096)- Queued Command Center
      * --1-------------(8192)- Queued Refinery
      * </pre>
      */
@@ -129,31 +129,32 @@ public class BroodWarBot extends DefaultBWListener
 			flags -= 4;
 
 		// Build the first barracks
-		if (self.minerals() > 150 && self.allUnitCount(UnitType.Terran_Barracks) == 0)
+		if (self.allUnitCount() > 12 && self.allUnitCount(UnitType.Terran_Barracks) == 0)
 		{
 			if ((flags / 8) % 2 == 0)
 				flags += 8;
 		}
 		else if ((flags / 8) % 2 == 1)
 			flags -= 8;
+		
 		// Build subsequent barracks'
-		if (self.minerals() > (150 + 150 * (self.allUnitCount(UnitType.Terran_Barracks)^2))) //(300 + 50 * self.allUnitCount(UnitType.Terran_Marine)))
+		if (self.minerals() > (300 + 50 * self.allUnitCount(UnitType.Terran_Marine)))
 		{
 			if ((flags / 8) % 2 == 0)
 				flags += 8;
 		}
 		else if ((flags / 8) % 2 == 1)
 			flags -= 8;
-			
+		
 		//Build first engineering
 		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Engineering_Bay) == 0)
- 		{
+		{
 			if ((flags / 16) % 2 == 0)
- 				flags += 16;
+				flags += 16;
 		}
 		else if ((flags / 16) % 2 == 1)
 			flags -= 16;
-			
+		
 		// TODO Build subsequent engineering
 		
 		//Build Turret
@@ -174,16 +175,22 @@ public class BroodWarBot extends DefaultBWListener
 		
 		// Build Bunker
 		if(self.allUnitCount(UnitType.Terran_Engineering_Bay) > 0 /*&& self.allUnitCount(UnitType.Terran_Bunker) is less than 2 per ramp inside base*/ && self.minerals() > 500)
-		
-		//build Refinery
-		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Refinery) < self.allUnitCount(UnitType.Terran_Command_Center)) //&& nearby.getType().isMineralField()))
 		{
-			if ((flags / 8192) % 2 == 0)
-				flags += 8192;
+			if ((flags / 128) % 2 == 0)
+				flags += 128;
 		}
-		else if ((flags / 8192) % 2 == 1)
-			flags -= 8192;
+		else if ((flags / 128) % 2 == 1)
+			flags -= 128;
 		
+		//Build first Factory
+		if(self.allUnitCount(UnitType.Terran_Barracks) > 1 && self.allUnitCount(UnitType.Terran_Factory) == 0)
+		{
+			if ((flags / 256) % 2 == 0)
+				flags += 256;
+		}
+		else if ((flags / 256) % 2 == 1)
+			flags -= 256;
+  		
 		// Make sure the build queued flag is correct
 		if ((flags / 2) % 2 == 1)
 		{
