@@ -144,6 +144,37 @@ public class BroodWarBot extends DefaultBWListener
 		}
 		else if ((flags / 8) % 2 == 1)
 			flags -= 8;
+			
+		//Build first engineering
+		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Engineering_Bay) == 0)
+ 		{
+			if ((flags / 16) % 2 == 0)
+ 				flags += 16;
+		}
+		else if ((flags / 16) % 2 == 1)
+			flags -= 16;
+			
+		// TODO Build subsequent engineering
+		
+		//Build Turret
+		if (/*enemyAir >= ASetValue &&*/ self.minerals() >= 500 && self.allUnitCount(UnitType.Terran_Missile_Turret) <= (7 * self.allUnitCount(UnitType.Terran_Command_Center)))
+		{
+			if ((flags / 32) % 2 == 0)
+				flags += 32;
+		}
+		else if (/*enemyAirIs>=75or80%OfTheirArmy (assuming they have the same supply as you) &&*/ self.allUnitCount(UnitType.Terran_Missile_Turret) <= (7 * self.allUnitCount(UnitType.Terran_Command_Center)))
+		{
+			if ((flags / 32) % 2 == 0)
+				flags += 32;
+		}
+		else if ((flags / 32) % 2 == 1)
+			flags -= 32;
+		
+		// TODO Build Academy
+		
+		// Build Bunker
+		if(self.allUnitCount(UnitType.Terran_Engineering_Bay) > 0 /*&& self.allUnitCount(UnitType.Terran_Bunker) is less than 2 per ramp inside base*/ && self.minerals() > 500)
+		
 		//build Refinery
 		if (self.allUnitCount(UnitType.Terran_Barracks) == 2 && self.allUnitCount(UnitType.Terran_Refinery) < self.allUnitCount(UnitType.Terran_Command_Center)) //&& nearby.getType().isMineralField()))
 		{
